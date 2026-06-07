@@ -114,7 +114,7 @@ export function ChatPanel({ highlightId }: { highlightId: string | null }) {
           />
           <button
             onClick={submit}
-            disabled={!input.trim()}
+            disabled={!input.trim() || isLoading}
             className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-40"
             aria-label="Send"
           >
