@@ -50,7 +50,7 @@ interface ChatContextValue {
     selectedText: string,
     question: string,
     anchor: { messageId: string } | { parentQaId: string },
-  ) => void;
+  ) => string;
   addQuestionToNode: (nodeId: string, question: string) => void;
 }
 
@@ -175,7 +175,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       anchor: { messageId: string } | { parentQaId: string },
     ) => {
       const convId = state.activeId;
-      if (!convId) return;
+      if (!convId) return "";
       const nodeId = uid("node");
       const qaId = uid("qa");
       updateConv(convId, (c) => {
@@ -212,6 +212,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         }
         return { ...c, messages, nodes, qas };
       });
+      return nodeId;
     },
     [state.activeId, updateConv],
   );
