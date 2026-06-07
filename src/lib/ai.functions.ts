@@ -57,6 +57,9 @@ export const chatReply = createServerFn({ method: "POST" })
     if (!LOVABLE_API_KEY) {
       throw new Error("LOVABLE_API_KEY is not configured");
     }
+    if (!(await consumeDailyQuota())) {
+      throw new Error(DAILY_LIMIT_MESSAGE);
+    }
     const response = await fetch(GATEWAY_URL, {
       method: "POST",
       headers: {
