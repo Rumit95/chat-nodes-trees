@@ -9,12 +9,14 @@ export function AnnotationPanel({
   onClose,
   onSelect,
   onAskMore,
+  onOpenNode,
 }: {
   conversation: Conversation;
   highlightId: string | null;
   onClose: () => void;
   onSelect: (a: PopupAnchor) => void;
   onAskMore: (nodeId: string, question: string) => void;
+  onOpenNode: (nodeId: string) => void;
 }) {
   // Top-level nodes: those anchored to a message (nested ones render recursively).
   const topLevel = Object.values(conversation.nodes)
@@ -55,6 +57,7 @@ export function AnnotationPanel({
               highlightId={highlightId}
               onSelect={onSelect}
               onAskMore={onAskMore}
+              onOpenNode={onOpenNode}
             />
           ))
         )}
