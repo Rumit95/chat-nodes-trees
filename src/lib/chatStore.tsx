@@ -16,6 +16,16 @@ import {
 } from "./chatTypes";
 import { chatReply, annotationReply } from "./ai.functions";
 
+// Returns a user-facing message for a failed AI call. Surfaces the daily-limit
+// notice from the server when present, otherwise the provided fallback.
+function aiErrorMessage(error: unknown, fallback: string): string {
+  const msg = error instanceof Error ? error.message : String(error ?? "");
+  if (msg.toLowerCase().includes("daily ai usage limit")) {
+    return "This demo has reached its daily AI usage limit. Please try again tomorrow.";
+  }
+  return fallback;
+}
+
 function emptyState(): ChatState {
   return { conversations: {}, order: [], activeId: null };
 }
