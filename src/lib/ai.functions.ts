@@ -36,11 +36,37 @@ export const chatReply = createServerFn({ method: "POST" })
   });
 
 export const annotationReply = createServerFn({ method: "POST" })
-  .inputValidator((data: { question: string; context: string }) => data)
+  .inputValidator(
+    (data: {
+      question: string;
+      selectedText: string;
+      sourceText?: string;
+      conversation?: { role: "user" | "assistant"; content: string }[];
+      priorQa?: { question: string; answer: string }[];
+    }) => data,
+  )
   .handler(async ({ data }) => {
     if (!LOVABLE_API_KEY) {
       throw new Error("LOVABLE_API_KEY is not configured");
     }
+    const parts: string[] = [];
+    if (data.conversation && data.conversation.length) {
+      const convo = data.conversation
+        .map((m) => `${m.role === "user" ? "User" : "Assistant"}: ${m.content}`)
+        .join("\n");
+      parts.push(`Conversation so far:\n"""${convo}"""`);
+    }
+    if (data.sourceText) {
+      parts.push(`The full passage the highlight came from:\n"""${data.sourceText}"""`);
+    }
+    parts.push(`The highlighted phrase the user is asking about:\n"""${data.selectedText}"""`);
+    if (data.priorQa && data.priorQa.length) {
+      const prior = data.priorQa
+        .map((q) => `Q: ${q.question}\nA: ${q.answer}`)
+        .join("\n\n");
+      parts.push(`Earlier follow-up questions in this thread:\n"""${prior}"""`);
+    }
+    parts.push(`Question: ${data.question}`);
     const response = await fetch(GATEWAY_URL, {
       method: "POST",
       headers: {
@@ -53,11 +79,11 @@ export const annotationReply = createServerFn({ method: "POST" })
           {
             role: "system",
             content:
-              "You are a helpful assistant answering a specific question about a short piece of text. Be concise and directly address the question.",
+              "You are a helpful assistant answering a follow-up question about a highlighted phrase taken from an AI chat. Always interpret the highlighted phrase in the context of the surrounding passage and conversation provided — do not answer it in isolation or guess an unrelated meaning. Be concise and directly address the question.",
           },
           {
             role: "user",
-            content: `Text:\n"""${data.context}"""\n\nQuestion: ${data.question}`,
+            content: parts.join("\n\n"),
           },
         ],
       }),
