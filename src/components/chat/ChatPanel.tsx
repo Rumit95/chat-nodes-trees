@@ -21,9 +21,18 @@ export function ChatPanel({ highlightId }: { highlightId: string | null }) {
     if (!highlightId || !active) return;
     setPanelOpen(true);
     setFocusNode(highlightId);
-    const el = document.getElementById(`node-${highlightId}`);
-    el?.scrollIntoView({ behavior: "smooth", block: "center" });
   }, [highlightId, active]);
+
+  // Scroll the side panel to the focused node after it renders.
+  useEffect(() => {
+    if (!panelOpen || !focusNode) return;
+    const id = requestAnimationFrame(() => {
+      document
+        .getElementById(`node-${focusNode}`)
+        ?.scrollIntoView({ behavior: "smooth", block: "center" });
+    });
+    return () => cancelAnimationFrame(id);
+  }, [focusNode, panelOpen, active?.nodes]);
 
   const submit = () => {
     if (!input.trim()) return;
@@ -34,20 +43,12 @@ export function ChatPanel({ highlightId }: { highlightId: string | null }) {
   const openNode = (nodeId: string) => {
     setPanelOpen(true);
     setFocusNode(nodeId);
-    requestAnimationFrame(() => {
-      document
-        .getElementById(`node-${nodeId}`)
-        ?.scrollIntoView({ behavior: "smooth", block: "center" });
-    });
   };
 
   // Hover on a highlight in main chat → focus its thread in the open side panel.
   const hoverNode = (nodeId: string) => {
     if (!panelOpen) return;
     setFocusNode(nodeId);
-    document
-      .getElementById(`node-${nodeId}`)
-      ?.scrollIntoView({ behavior: "smooth", block: "center" });
   };
 
   if (!active) {
