@@ -240,8 +240,23 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         return { ...c, messages, nodes, qas };
       });
       try {
+        const conv = state.conversations[convId];
+        let sourceText: string | undefined;
+        if ("messageId" in anchor) {
+          sourceText = conv?.messages.find((m) => m.id === anchor.messageId)?.content;
+        } else {
+          sourceText = conv?.qas[anchor.parentQaId]?.answer;
+        }
+        const conversation = conv?.messages
+          .filter((m) => m.content && m.content !== "Thinking…")
+          .map((m) => ({ role: m.role as "user" | "assistant", content: m.content }));
         const { content: answer } = await annotationReply({
-          data: { question: question.trim(), context: selectedText },
+          data: {
+            question: question.trim(),
+            selectedText,
+            sourceText,
+            conversation,
+          },
         });
         updateConv(convId, (c) => ({
           ...c,
@@ -258,7 +273,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       }
       return nodeId;
     },
-    [state.activeId, updateConv],
+    [state.activeId, state.conversations, updateConv],
   );
 
   const addQuestionToNode = useCallback(
@@ -285,8 +300,28 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         return { ...c, nodes, qas };
       });
       try {
+        const conv = state.conversations[convId];
+        let sourceText: string | undefined;
+        if (node.messageId) {
+          sourceText = conv?.messages.find((m) => m.id === node.messageId)?.content;
+        } else if (node.parentQaId) {
+          sourceText = conv?.qas[node.parentQaId]?.answer;
+        }
+        const priorQa = node.qaIds
+          .map((id) => conv?.qas[id])
+          .filter((q): q is NonNullable<typeof q> => !!q && q.answer !== "Thinking…")
+          .map((q) => ({ question: q.question, answer: q.answer }));
+        const conversation = conv?.messages
+          .filter((m) => m.content && m.content !== "Thinking…")
+          .map((m) => ({ role: m.role as "user" | "assistant", content: m.content }));
         const { content: answer } = await annotationReply({
-          data: { question: question.trim(), context: node.selectedText },
+          data: {
+            question: question.trim(),
+            selectedText: node.selectedText,
+            sourceText,
+            conversation,
+            priorQa,
+          },
         });
         updateConv(convId, (c) => ({
           ...c,
