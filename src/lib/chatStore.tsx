@@ -191,11 +191,12 @@ export function ChatProvider({ children }: { children: ReactNode }) {
           ...c,
           messages: c.messages.map((m) => (m.id === aiMsgId ? { ...m, content: reply } : m)),
         }));
-      } catch {
+      } catch (e) {
+        const msg = aiErrorMessage(e, "Sorry, the AI couldn’t respond right now.");
         updateConv(id, (c) => ({
           ...c,
           messages: c.messages.map((m) =>
-            m.id === aiMsgId ? { ...m, content: "Sorry, the AI couldn’t respond right now." } : m,
+            m.id === aiMsgId ? { ...m, content: msg } : m,
           ),
         }));
       } finally {
