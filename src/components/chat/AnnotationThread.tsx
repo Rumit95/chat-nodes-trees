@@ -2,7 +2,7 @@ import { useState } from "react";
 import { CornerDownRight, Plus, Quote } from "lucide-react";
 import type { Conversation } from "@/lib/chatTypes";
 import { Selectable } from "./Selectable";
-import { HighlightedContent } from "./HighlightedContent";
+import { MarkdownContent } from "./MarkdownContent";
 import type { PopupAnchor } from "./SelectionPopup";
 
 export function AnnotationThread({
