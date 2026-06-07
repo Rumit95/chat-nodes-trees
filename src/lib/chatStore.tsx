@@ -16,6 +16,16 @@ import {
 } from "./chatTypes";
 import { chatReply, annotationReply } from "./ai.functions";
 
+// Returns a user-facing message for a failed AI call. Surfaces the daily-limit
+// notice from the server when present, otherwise the provided fallback.
+function aiErrorMessage(error: unknown, fallback: string): string {
+  const msg = error instanceof Error ? error.message : String(error ?? "");
+  if (msg.toLowerCase().includes("daily ai usage limit")) {
+    return "This demo has reached its daily AI usage limit. Please try again tomorrow.";
+  }
+  return fallback;
+}
+
 function emptyState(): ChatState {
   return { conversations: {}, order: [], activeId: null };
 }
@@ -181,11 +191,12 @@ export function ChatProvider({ children }: { children: ReactNode }) {
           ...c,
           messages: c.messages.map((m) => (m.id === aiMsgId ? { ...m, content: reply } : m)),
         }));
-      } catch {
+      } catch (e) {
+        const msg = aiErrorMessage(e, "Sorry, the AI couldn’t respond right now.");
         updateConv(id, (c) => ({
           ...c,
           messages: c.messages.map((m) =>
-            m.id === aiMsgId ? { ...m, content: "Sorry, the AI couldn’t respond right now." } : m,
+            m.id === aiMsgId ? { ...m, content: msg } : m,
           ),
         }));
       } finally {
@@ -262,12 +273,13 @@ export function ChatProvider({ children }: { children: ReactNode }) {
           ...c,
           qas: { ...c.qas, [qaId]: { ...c.qas[qaId], answer } },
         }));
-      } catch {
+      } catch (e) {
+        const msg = aiErrorMessage(e, "Sorry, the AI couldn’t answer this right now.");
         updateConv(convId, (c) => ({
           ...c,
           qas: {
             ...c.qas,
-            [qaId]: { ...c.qas[qaId], answer: "Sorry, the AI couldn’t answer this right now." },
+            [qaId]: { ...c.qas[qaId], answer: msg },
           },
         }));
       }
@@ -327,12 +339,13 @@ export function ChatProvider({ children }: { children: ReactNode }) {
           ...c,
           qas: { ...c.qas, [qaId]: { ...c.qas[qaId], answer } },
         }));
-      } catch {
+      } catch (e) {
+        const msg = aiErrorMessage(e, "Sorry, the AI couldn’t answer this right now.");
         updateConv(convId, (c) => ({
           ...c,
           qas: {
             ...c.qas,
-            [qaId]: { ...c.qas[qaId], answer: "Sorry, the AI couldn’t answer this right now." },
+            [qaId]: { ...c.qas[qaId], answer: msg },
           },
         }));
       }
