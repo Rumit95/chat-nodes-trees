@@ -1,7 +1,7 @@
 import { Bot, User } from "lucide-react";
 import type { Conversation, Message } from "@/lib/chatTypes";
 import { Selectable } from "./Selectable";
-import { HighlightedContent } from "./HighlightedContent";
+import { MarkdownContent } from "./MarkdownContent";
 import type { PopupAnchor } from "./SelectionPopup";
 
 export function ChatMessage({
@@ -51,9 +51,9 @@ export function ChatMessage({
                   target: { messageId: message.id },
                 })
               }
-              className="whitespace-pre-wrap rounded-2xl rounded-tl-sm border border-border bg-card px-4 py-2.5 text-sm leading-relaxed text-card-foreground shadow-soft selection:bg-accent selection:text-accent-foreground"
+              className="markdown-msg whitespace-pre-wrap rounded-2xl rounded-tl-sm border border-border bg-card px-4 py-2.5 text-sm leading-relaxed text-card-foreground shadow-soft selection:bg-accent selection:text-accent-foreground"
             >
-              <HighlightedContent
+              <MarkdownContent
                 content={message.content}
                 marks={marks}
                 highlightId={highlightId}

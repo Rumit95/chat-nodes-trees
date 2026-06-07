@@ -2,7 +2,7 @@ import { useState } from "react";
 import { CornerDownRight, Plus, Quote } from "lucide-react";
 import type { Conversation } from "@/lib/chatTypes";
 import { Selectable } from "./Selectable";
-import { HighlightedContent } from "./HighlightedContent";
+import { MarkdownContent } from "./MarkdownContent";
 import type { PopupAnchor } from "./SelectionPopup";
 
 export function AnnotationThread({
@@ -62,11 +62,11 @@ export function AnnotationThread({
                     target: { parentQaId: qa.id },
                   })
                 }
-                className="flex gap-1.5 whitespace-pre-wrap rounded-lg bg-secondary/60 px-2.5 py-2 text-sm text-secondary-foreground"
+                className="markdown-msg flex gap-1.5 whitespace-pre-wrap rounded-lg bg-secondary/60 px-2.5 py-2 text-sm text-secondary-foreground"
               >
                 <span className="font-medium text-accent-foreground">A</span>
                 <span>
-                  <HighlightedContent
+                  <MarkdownContent
                     content={qa.answer}
                     marks={qa.childNodeIds
                       .map((id) => conversation.nodes[id])
