@@ -93,6 +93,9 @@ export const annotationReply = createServerFn({ method: "POST" })
     if (!LOVABLE_API_KEY) {
       throw new Error("LOVABLE_API_KEY is not configured");
     }
+    if (!(await consumeDailyQuota())) {
+      throw new Error(DAILY_LIMIT_MESSAGE);
+    }
     const parts: string[] = [];
     if (data.conversation && data.conversation.length) {
       const convo = data.conversation
