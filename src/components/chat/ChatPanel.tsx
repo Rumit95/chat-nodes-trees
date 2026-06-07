@@ -124,14 +124,7 @@ export function ChatPanel({ highlightId }: { highlightId: string | null }) {
           onSubmit={(question) => {
             const newId = addAnnotation(popup.selectedText, question, popup.target);
             setPanelOpen(true);
-            if (newId) {
-              setFocusNode(newId);
-              requestAnimationFrame(() =>
-                document
-                  .getElementById(`node-${newId}`)
-                  ?.scrollIntoView({ behavior: "smooth", block: "center" }),
-              );
-            }
+            if (newId) setFocusNode(newId);
           }}
         />
       )}
