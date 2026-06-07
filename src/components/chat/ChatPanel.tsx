@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { SendHorizontal, Sparkles } from "lucide-react";
+import { SendHorizontal, Sparkles, Network } from "lucide-react";
 import { useChat } from "@/lib/chatStore";
 import { ChatMessage } from "./ChatMessage";
 import { AnnotationPanel } from "./AnnotationPanel";
@@ -115,6 +115,16 @@ export function ChatPanel({ highlightId }: { highlightId: string | null }) {
             setPanelOpen(true);
           }}
         />
+      )}
+
+      {!panelOpen && Object.values(active.nodes).some((n) => n.messageId) && (
+        <button
+          onClick={() => setPanelOpen(true)}
+          className="absolute right-4 top-4 z-10 flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1.5 text-xs font-medium text-foreground shadow-soft transition-opacity hover:opacity-90"
+        >
+          <Network className="h-3.5 w-3.5 text-accent-foreground" />
+          Side quests
+        </button>
       )}
       </div>
 
