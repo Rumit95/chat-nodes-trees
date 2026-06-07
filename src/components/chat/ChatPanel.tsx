@@ -2,12 +2,15 @@ import { useEffect, useRef, useState } from "react";
 import { SendHorizontal, Sparkles } from "lucide-react";
 import { useChat } from "@/lib/chatStore";
 import { ChatMessage } from "./ChatMessage";
+import { AnnotationPanel } from "./AnnotationPanel";
 import { SelectionPopup, type PopupAnchor } from "./SelectionPopup";
 
 export function ChatPanel({ highlightId }: { highlightId: string | null }) {
   const { active, sendMessage, addAnnotation, addQuestionToNode } = useChat();
   const [input, setInput] = useState("");
   const [popup, setPopup] = useState<PopupAnchor | null>(null);
+  const [panelOpen, setPanelOpen] = useState(false);
+  const [focusNode, setFocusNode] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -16,6 +19,8 @@ export function ChatPanel({ highlightId }: { highlightId: string | null }) {
 
   useEffect(() => {
     if (!highlightId || !active) return;
+    setPanelOpen(true);
+    setFocusNode(highlightId);
     const el = document.getElementById(`node-${highlightId}`);
     el?.scrollIntoView({ behavior: "smooth", block: "center" });
   }, [highlightId, active]);
@@ -24,6 +29,16 @@ export function ChatPanel({ highlightId }: { highlightId: string | null }) {
     if (!input.trim()) return;
     sendMessage(input);
     setInput("");
+  };
+
+  const openNode = (nodeId: string) => {
+    setPanelOpen(true);
+    setFocusNode(nodeId);
+    requestAnimationFrame(() => {
+      document
+        .getElementById(`node-${nodeId}`)
+        ?.scrollIntoView({ behavior: "smooth", block: "center" });
+    });
   };
 
   if (!active) {
@@ -35,7 +50,8 @@ export function ChatPanel({ highlightId }: { highlightId: string | null }) {
   }
 
   return (
-    <div className="relative flex flex-1 flex-col overflow-hidden">
+    <div className="relative flex flex-1 overflow-hidden">
+      <div className="relative flex flex-1 flex-col overflow-hidden">
       <div ref={scrollRef} className="flex-1 overflow-y-auto">
         <div className="mx-auto w-full max-w-3xl space-y-6 px-4 py-6">
           {active.messages.length === 0 ? (
@@ -57,7 +73,7 @@ export function ChatPanel({ highlightId }: { highlightId: string | null }) {
                 conversation={active}
                 highlightId={highlightId}
                 onSelect={setPopup}
-                onAskMore={addQuestionToNode}
+                onOpenNode={openNode}
               />
             ))
           )}
@@ -94,7 +110,21 @@ export function ChatPanel({ highlightId }: { highlightId: string | null }) {
         <SelectionPopup
           anchor={popup}
           onClose={() => setPopup(null)}
-          onSubmit={(question) => addAnnotation(popup.selectedText, question, popup.target)}
+          onSubmit={(question) => {
+            addAnnotation(popup.selectedText, question, popup.target);
+            setPanelOpen(true);
+          }}
+        />
+      )}
+      </div>
+
+      {panelOpen && (
+        <AnnotationPanel
+          conversation={active}
+          highlightId={focusNode}
+          onClose={() => setPanelOpen(false)}
+          onSelect={setPopup}
+          onAskMore={addQuestionToNode}
         />
       )}
     </div>
