@@ -1,12 +1,12 @@
 import { useEffect, useRef, useState } from "react";
-import { SendHorizontal, Sparkles, Network } from "lucide-react";
+import { SendHorizontal, Sparkles, Network, Loader2 } from "lucide-react";
 import { useChat } from "@/lib/chatStore";
 import { ChatMessage } from "./ChatMessage";
 import { AnnotationPanel } from "./AnnotationPanel";
 import { SelectionPopup, type PopupAnchor } from "./SelectionPopup";
 
 export function ChatPanel({ highlightId }: { highlightId: string | null }) {
-  const { active, sendMessage, addAnnotation, addQuestionToNode } = useChat();
+  const { active, sendMessage, addAnnotation, addQuestionToNode, isLoading } = useChat();
   const [input, setInput] = useState("");
   const [popup, setPopup] = useState<PopupAnchor | null>(null);
   const [panelOpen, setPanelOpen] = useState(false);
@@ -88,6 +88,12 @@ export function ChatPanel({ highlightId }: { highlightId: string | null }) {
               />
             ))
           )}
+          {isLoading && (
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              AI is thinking…
+            </div>
+          )}
         </div>
       </div>
 
@@ -108,7 +114,7 @@ export function ChatPanel({ highlightId }: { highlightId: string | null }) {
           />
           <button
             onClick={submit}
-            disabled={!input.trim()}
+            disabled={!input.trim() || isLoading}
             className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-40"
             aria-label="Send"
           >
@@ -121,8 +127,8 @@ export function ChatPanel({ highlightId }: { highlightId: string | null }) {
         <SelectionPopup
           anchor={popup}
           onClose={() => setPopup(null)}
-          onSubmit={(question) => {
-            const newId = addAnnotation(popup.selectedText, question, popup.target);
+          onSubmit={async (question) => {
+            const newId = await addAnnotation(popup.selectedText, question, popup.target);
             setPanelOpen(true);
             if (newId) setFocusNode(newId);
           }}

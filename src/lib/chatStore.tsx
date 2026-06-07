@@ -14,7 +14,7 @@ import {
   type Conversation,
   type Message,
 } from "./chatTypes";
-import { mockReply, mockAnnotationAnswer } from "./mockAi";
+import { chatReply, annotationReply } from "./ai.functions";
 
 function emptyState(): ChatState {
   return { conversations: {}, order: [], activeId: null };
@@ -42,6 +42,7 @@ interface ChatContextValue {
   state: ChatState;
   hydrated: boolean;
   active: Conversation | null;
+  isLoading: boolean;
   createConversation: () => string;
   deleteConversation: (id: string) => void;
   selectConversation: (id: string) => void;
@@ -50,8 +51,8 @@ interface ChatContextValue {
     selectedText: string,
     question: string,
     anchor: { messageId: string } | { parentQaId: string },
-  ) => string;
-  addQuestionToNode: (nodeId: string, question: string) => void;
+  ) => Promise<string>;
+  addQuestionToNode: (nodeId: string, question: string) => Promise<void>;
 }
 
 const ChatContext = createContext<ChatContextValue | null>(null);
@@ -59,6 +60,7 @@ const ChatContext = createContext<ChatContextValue | null>(null);
 export function ChatProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<ChatState>(emptyState);
   const [hydrated, setHydrated] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   // Load from localStorage on mount (client only).
   useEffect(() => {
@@ -137,7 +139,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
   );
 
   const sendMessage = useCallback(
-    (text: string) => {
+    async (text: string) => {
       const content = text.trim();
       if (!content) return;
       let convId = state.activeId;
@@ -152,10 +154,11 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         createdAt: Date.now(),
         nodeIds: [],
       };
+      const aiMsgId = uid("msg");
       const aiMsg: Message = {
-        id: uid("msg"),
+        id: aiMsgId,
         role: "assistant",
-        content: mockReply(content),
+        content: "Thinking…",
         createdAt: Date.now() + 1,
         nodeIds: [],
       };
@@ -164,12 +167,36 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         title: c.messages.length === 0 ? titleFrom(content) : c.title,
         messages: [...c.messages, userMsg, aiMsg],
       }));
+      setIsLoading(true);
+      try {
+        const history = [
+          ...state.conversations[id].messages.map((m) => ({
+            role: m.role as "user" | "assistant",
+            content: m.content,
+          })),
+          { role: "user" as const, content },
+        ];
+        const { content: reply } = await chatReply({ data: { messages: history } });
+        updateConv(id, (c) => ({
+          ...c,
+          messages: c.messages.map((m) => (m.id === aiMsgId ? { ...m, content: reply } : m)),
+        }));
+      } catch {
+        updateConv(id, (c) => ({
+          ...c,
+          messages: c.messages.map((m) =>
+            m.id === aiMsgId ? { ...m, content: "Sorry, the AI couldn’t respond right now." } : m,
+          ),
+        }));
+      } finally {
+        setIsLoading(false);
+      }
     },
-    [state.activeId, createConversation, updateConv],
+    [state.activeId, state.conversations, createConversation, updateConv],
   );
 
   const addAnnotation = useCallback(
-    (
+    async (
       selectedText: string,
       question: string,
       anchor: { messageId: string } | { parentQaId: string },
@@ -194,7 +221,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
           id: qaId,
           nodeId,
           question: question.trim(),
-          answer: mockAnnotationAnswer(question, selectedText),
+          answer: "Thinking…",
           createdAt: Date.now(),
           childNodeIds: [],
         };
@@ -212,42 +239,77 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         }
         return { ...c, messages, nodes, qas };
       });
+      try {
+        const { content: answer } = await annotationReply({
+          data: { question: question.trim(), context: selectedText },
+        });
+        updateConv(convId, (c) => ({
+          ...c,
+          qas: { ...c.qas, [qaId]: { ...c.qas[qaId], answer } },
+        }));
+      } catch {
+        updateConv(convId, (c) => ({
+          ...c,
+          qas: {
+            ...c.qas,
+            [qaId]: { ...c.qas[qaId], answer: "Sorry, the AI couldn’t answer this right now." },
+          },
+        }));
+      }
       return nodeId;
     },
     [state.activeId, updateConv],
   );
 
   const addQuestionToNode = useCallback(
-    (nodeId: string, question: string) => {
+    async (nodeId: string, question: string) => {
       const convId = state.activeId;
       if (!convId) return;
       const qaId = uid("qa");
+      const node = state.conversations[convId]?.nodes[nodeId];
+      if (!node) return;
       updateConv(convId, (c) => {
-        const node = c.nodes[nodeId];
-        if (!node) return c;
         const qas = { ...c.qas };
         qas[qaId] = {
           id: qaId,
           nodeId,
           question: question.trim(),
-          answer: mockAnnotationAnswer(question, node.selectedText),
+          answer: "Thinking…",
           createdAt: Date.now(),
           childNodeIds: [],
         };
         const nodes = {
           ...c.nodes,
-          [nodeId]: { ...node, qaIds: [...node.qaIds, qaId] },
+          [nodeId]: { ...c.nodes[nodeId], qaIds: [...c.nodes[nodeId].qaIds, qaId] },
         };
         return { ...c, nodes, qas };
       });
+      try {
+        const { content: answer } = await annotationReply({
+          data: { question: question.trim(), context: node.selectedText },
+        });
+        updateConv(convId, (c) => ({
+          ...c,
+          qas: { ...c.qas, [qaId]: { ...c.qas[qaId], answer } },
+        }));
+      } catch {
+        updateConv(convId, (c) => ({
+          ...c,
+          qas: {
+            ...c.qas,
+            [qaId]: { ...c.qas[qaId], answer: "Sorry, the AI couldn’t answer this right now." },
+          },
+        }));
+      }
     },
-    [state.activeId, updateConv],
+    [state.activeId, state.conversations, updateConv],
   );
 
   const value: ChatContextValue = {
     state,
     hydrated,
     active,
+    isLoading,
     createConversation,
     deleteConversation,
     selectConversation,
