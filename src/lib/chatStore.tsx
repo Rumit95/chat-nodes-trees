@@ -51,8 +51,8 @@ interface ChatContextValue {
     selectedText: string,
     question: string,
     anchor: { messageId: string } | { parentQaId: string },
-  ) => string;
-  addQuestionToNode: (nodeId: string, question: string) => void;
+  ) => Promise<string>;
+  addQuestionToNode: (nodeId: string, question: string) => Promise<void>;
 }
 
 const ChatContext = createContext<ChatContextValue | null>(null);
