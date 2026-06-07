@@ -1,6 +1,28 @@
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import rehypeRaw from "rehype-raw";
+import rehypeSanitize, { defaultSchema } from "rehype-sanitize";
+
+// Allow only the <mark data-node-id> structure we inject ourselves on top of
+// the safe default schema. Everything else (scripts, event handlers, inline
+// styles, dangerous URLs) is stripped before reaching the DOM.
+const sanitizeSchema = {
+  ...defaultSchema,
+  tagNames: [...(defaultSchema.tagNames ?? []), "mark"],
+  attributes: {
+    ...defaultSchema.attributes,
+    mark: ["dataNodeId"],
+  },
+};
+
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
 
 function insertMarkTags(
   content: string,
@@ -28,9 +50,8 @@ function insertMarkTags(
     if (r.start > cursor) {
       result += content.slice(cursor, r.start);
     }
-    result += `<mark data-node-id="${r.nodeId}">${content.slice(
-      r.start,
-      r.end
+    result += `<mark data-node-id="${escapeHtml(r.nodeId)}">${escapeHtml(
+      content.slice(r.start, r.end)
     )}</mark>`;
     cursor = r.end;
   }
@@ -84,7 +105,7 @@ export function MarkdownContent({
   return (
     <ReactMarkdown
       remarkPlugins={[remarkGfm]}
-      rehypePlugins={[rehypeRaw]}
+      rehypePlugins={[rehypeRaw, [rehypeSanitize, sanitizeSchema]]}
       components={{
         mark: MarkComponent,
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
