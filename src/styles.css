@@ -172,3 +172,118 @@
     color: var(--color-foreground);
   }
 }
+
+/* Markdown message rendering */
+.markdown-msg {
+  --markdown-spacing: 0.5rem;
+}
+
+.markdown-msg p {
+  margin-bottom: var(--markdown-spacing);
+}
+.markdown-msg p:last-child {
+  margin-bottom: 0;
+}
+
+.markdown-msg ul,
+.markdown-msg ol {
+  margin-bottom: var(--markdown-spacing);
+  padding-left: 1.25rem;
+}
+.markdown-msg ul {
+  list-style-type: disc;
+}
+.markdown-msg ol {
+  list-style-type: decimal;
+}
+.markdown-msg li {
+  margin-bottom: 0.25rem;
+}
+.markdown-msg li:last-child {
+  margin-bottom: 0;
+}
+
+.markdown-msg h1,
+.markdown-msg h2,
+.markdown-msg h3,
+.markdown-msg h4 {
+  font-weight: 600;
+  margin-top: 0.75rem;
+  margin-bottom: var(--markdown-spacing);
+  color: var(--color-foreground);
+}
+.markdown-msg h1 {
+  font-size: 1.125rem;
+}
+.markdown-msg h2 {
+  font-size: 1rem;
+}
+.markdown-msg h3,
+.markdown-msg h4 {
+  font-size: 0.95rem;
+}
+
+.markdown-msg code {
+  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas,
+    monospace;
+  font-size: 0.85em;
+  padding: 0.125rem 0.35rem;
+  border-radius: 0.25rem;
+  background-color: var(--color-muted);
+  color: var(--color-foreground);
+}
+
+.markdown-msg pre {
+  background-color: var(--color-muted);
+  border-radius: 0.5rem;
+  padding: 0.75rem 1rem;
+  margin-bottom: var(--markdown-spacing);
+  overflow-x: auto;
+}
+.markdown-msg pre code {
+  background-color: transparent;
+  padding: 0;
+  font-size: 0.8em;
+}
+
+.markdown-msg blockquote {
+  border-left: 3px solid var(--color-border);
+  padding-left: 0.75rem;
+  margin-bottom: var(--markdown-spacing);
+  color: var(--color-muted-foreground);
+  font-style: italic;
+}
+
+.markdown-msg a {
+  color: var(--color-primary);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.markdown-msg strong {
+  font-weight: 600;
+  color: var(--color-foreground);
+}
+
+.markdown-msg hr {
+  border: 0;
+  border-top: 1px solid var(--color-border);
+  margin: var(--markdown-spacing) 0;
+}
+
+.markdown-msg table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: var(--markdown-spacing);
+  font-size: 0.85em;
+}
+.markdown-msg th,
+.markdown-msg td {
+  border: 1px solid var(--color-border);
+  padding: 0.4rem 0.6rem;
+  text-align: left;
+}
+.markdown-msg th {
+  background-color: var(--color-muted);
+  font-weight: 600;
+}
