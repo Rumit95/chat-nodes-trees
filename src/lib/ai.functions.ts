@@ -4,28 +4,31 @@ import { z } from "zod";
 const LOVABLE_API_KEY = process.env.LOVABLE_API_KEY;
 const GATEWAY_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
 
+// Demo/trial caps — keep AI usage low and predictable.
+const MAX_OUTPUT_TOKENS = 400;
+
 const messageSchema = z.object({
   role: z.enum(["user", "assistant"]),
-  content: z.string().min(1).max(4000),
+  content: z.string().min(1).max(2000),
 });
 
 const chatReplySchema = z.object({
-  messages: z.array(messageSchema).min(1).max(50),
+  messages: z.array(messageSchema).min(1).max(20),
 });
 
 const annotationReplySchema = z.object({
-  question: z.string().min(1).max(2000),
-  selectedText: z.string().min(1).max(4000),
-  sourceText: z.string().max(8000).optional(),
-  conversation: z.array(messageSchema).max(50).optional(),
+  question: z.string().min(1).max(1000),
+  selectedText: z.string().min(1).max(2000),
+  sourceText: z.string().max(4000).optional(),
+  conversation: z.array(messageSchema).max(20).optional(),
   priorQa: z
     .array(
       z.object({
-        question: z.string().min(1).max(2000),
-        answer: z.string().min(1).max(8000),
+        question: z.string().min(1).max(1000),
+        answer: z.string().min(1).max(4000),
       }),
     )
-    .max(50)
+    .max(20)
     .optional(),
 });
 
@@ -43,6 +46,7 @@ export const chatReply = createServerFn({ method: "POST" })
       },
       body: JSON.stringify({
         model: "google/gemini-2.5-flash-lite",
+        max_tokens: MAX_OUTPUT_TOKENS,
         messages: [
           { role: "system", content: "You are a helpful, concise AI assistant. Keep answers clear and to the point." },
           ...data.messages,
