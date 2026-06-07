@@ -50,7 +50,7 @@ interface ChatContextValue {
     selectedText: string,
     question: string,
     anchor: { messageId: string } | { parentQaId: string },
-  ) => void;
+  ) => string;
   addQuestionToNode: (nodeId: string, question: string) => void;
 }
 
