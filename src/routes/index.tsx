@@ -49,7 +49,6 @@ function Workspace() {
     setTab("chat");
     setSearchOpen(false);
     setHighlightId(nodeId);
-    setTimeout(() => setHighlightId((cur) => (cur === nodeId ? cur : cur)), 0);
   };
 
   const focusFromGraph = (nodeId: string) => {
