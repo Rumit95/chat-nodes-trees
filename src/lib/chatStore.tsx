@@ -14,7 +14,7 @@ import {
   type Conversation,
   type Message,
 } from "./chatTypes";
-import { mockReply, mockAnnotationAnswer } from "./mockAi";
+import { chatReply, annotationReply } from "./ai.functions";
 
 function emptyState(): ChatState {
   return { conversations: {}, order: [], activeId: null };
