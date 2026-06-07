@@ -42,6 +42,7 @@ interface ChatContextValue {
   state: ChatState;
   hydrated: boolean;
   active: Conversation | null;
+  isLoading: boolean;
   createConversation: () => string;
   deleteConversation: (id: string) => void;
   selectConversation: (id: string) => void;
