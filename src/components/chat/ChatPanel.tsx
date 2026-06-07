@@ -1,12 +1,12 @@
 import { useEffect, useRef, useState } from "react";
-import { SendHorizontal, Sparkles, Network } from "lucide-react";
+import { SendHorizontal, Sparkles, Network, Loader2 } from "lucide-react";
 import { useChat } from "@/lib/chatStore";
 import { ChatMessage } from "./ChatMessage";
 import { AnnotationPanel } from "./AnnotationPanel";
 import { SelectionPopup, type PopupAnchor } from "./SelectionPopup";
 
 export function ChatPanel({ highlightId }: { highlightId: string | null }) {
-  const { active, sendMessage, addAnnotation, addQuestionToNode } = useChat();
+  const { active, sendMessage, addAnnotation, addQuestionToNode, isLoading } = useChat();
   const [input, setInput] = useState("");
   const [popup, setPopup] = useState<PopupAnchor | null>(null);
   const [panelOpen, setPanelOpen] = useState(false);
