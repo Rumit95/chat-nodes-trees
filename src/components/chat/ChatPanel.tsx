@@ -41,6 +41,15 @@ export function ChatPanel({ highlightId }: { highlightId: string | null }) {
     });
   };
 
+  // Hover on a highlight in main chat → focus its thread in the open side panel.
+  const hoverNode = (nodeId: string) => {
+    if (!panelOpen) return;
+    setFocusNode(nodeId);
+    document
+      .getElementById(`node-${nodeId}`)
+      ?.scrollIntoView({ behavior: "smooth", block: "center" });
+  };
+
   if (!active) {
     return (
       <div className="flex flex-1 items-center justify-center text-muted-foreground">
@@ -74,6 +83,7 @@ export function ChatPanel({ highlightId }: { highlightId: string | null }) {
                 highlightId={highlightId}
                 onSelect={setPopup}
                 onOpenNode={openNode}
+                onHoverNode={hoverNode}
               />
             ))
           )}
@@ -111,8 +121,16 @@ export function ChatPanel({ highlightId }: { highlightId: string | null }) {
           anchor={popup}
           onClose={() => setPopup(null)}
           onSubmit={(question) => {
-            addAnnotation(popup.selectedText, question, popup.target);
+            const newId = addAnnotation(popup.selectedText, question, popup.target);
             setPanelOpen(true);
+            if (newId) {
+              setFocusNode(newId);
+              requestAnimationFrame(() =>
+                document
+                  .getElementById(`node-${newId}`)
+                  ?.scrollIntoView({ behavior: "smooth", block: "center" }),
+              );
+            }
           }}
         />
       )}
@@ -135,6 +153,7 @@ export function ChatPanel({ highlightId }: { highlightId: string | null }) {
           onClose={() => setPanelOpen(false)}
           onSelect={setPopup}
           onAskMore={addQuestionToNode}
+          onOpenNode={openNode}
         />
       )}
     </div>
