@@ -77,14 +77,18 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Lovable App" },
-      { name: "description", content: "Lovable Generated Project" },
+      { title: "Chat Nodes" },
+      { name: "description", content: "Chat Weaver is a web app that combines AI chat with a knowledge graph builder." },
       { name: "author", content: "Lovable" },
-      { property: "og:title", content: "Lovable App" },
-      { property: "og:description", content: "Lovable Generated Project" },
+      { property: "og:title", content: "Chat Nodes" },
+      { property: "og:description", content: "Chat Weaver is a web app that combines AI chat with a knowledge graph builder." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
       { name: "twitter:site", content: "@Lovable" },
+      { name: "twitter:title", content: "Chat Nodes" },
+      { name: "twitter:description", content: "Chat Weaver is a web app that combines AI chat with a knowledge graph builder." },
+      { property: "og:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/pWFeDdQNTvgDs7Wz6NYnYyYIfHQ2/social-images/social-1780825253808-Gemini_Generated_Image_j0mgxfj0mgxfj0mg.webp" },
+      { name: "twitter:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/pWFeDdQNTvgDs7Wz6NYnYyYIfHQ2/social-images/social-1780825253808-Gemini_Generated_Image_j0mgxfj0mgxfj0mg.webp" },
     ],
     links: [
       {
