@@ -339,12 +339,13 @@ export function ChatProvider({ children }: { children: ReactNode }) {
           ...c,
           qas: { ...c.qas, [qaId]: { ...c.qas[qaId], answer } },
         }));
-      } catch {
+      } catch (e) {
+        const msg = aiErrorMessage(e, "Sorry, the AI couldn’t answer this right now.");
         updateConv(convId, (c) => ({
           ...c,
           qas: {
             ...c.qas,
-            [qaId]: { ...c.qas[qaId], answer: "Sorry, the AI couldn’t answer this right now." },
+            [qaId]: { ...c.qas[qaId], answer: msg },
           },
         }));
       }
