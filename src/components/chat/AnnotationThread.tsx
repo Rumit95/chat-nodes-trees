@@ -2,6 +2,7 @@ import { useState } from "react";
 import { CornerDownRight, Plus, Quote } from "lucide-react";
 import type { Conversation } from "@/lib/chatTypes";
 import { Selectable } from "./Selectable";
+import { HighlightedContent } from "./HighlightedContent";
 import type { PopupAnchor } from "./SelectionPopup";
 
 export function AnnotationThread({
@@ -11,6 +12,7 @@ export function AnnotationThread({
   highlightId,
   onSelect,
   onAskMore,
+  onOpenNode,
 }: {
   conversation: Conversation;
   nodeId: string;
@@ -18,6 +20,7 @@ export function AnnotationThread({
   highlightId: string | null;
   onSelect: (a: PopupAnchor) => void;
   onAskMore: (nodeId: string, question: string) => void;
+  onOpenNode: (nodeId: string) => void;
 }) {
   const node = conversation.nodes[nodeId];
   const [extra, setExtra] = useState("");
@@ -62,7 +65,17 @@ export function AnnotationThread({
                 className="flex gap-1.5 whitespace-pre-wrap rounded-lg bg-secondary/60 px-2.5 py-2 text-sm text-secondary-foreground"
               >
                 <span className="font-medium text-accent-foreground">A</span>
-                <span>{qa.answer}</span>
+                <span>
+                  <HighlightedContent
+                    content={qa.answer}
+                    marks={qa.childNodeIds
+                      .map((id) => conversation.nodes[id])
+                      .filter(Boolean)
+                      .map((n) => ({ nodeId: n.id, text: n.selectedText }))}
+                    highlightId={highlightId}
+                    onOpenNode={onOpenNode}
+                  />
+                </span>
               </Selectable>
 
               {qa.childNodeIds.map((childId) => (
@@ -76,6 +89,7 @@ export function AnnotationThread({
                       highlightId={highlightId}
                       onSelect={onSelect}
                       onAskMore={onAskMore}
+                      onOpenNode={onOpenNode}
                     />
                   </div>
                 </div>
