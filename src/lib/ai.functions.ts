@@ -97,6 +97,7 @@ export const annotationReply = createServerFn({ method: "POST" })
       },
       body: JSON.stringify({
         model: "google/gemini-2.5-flash-lite",
+        max_tokens: MAX_OUTPUT_TOKENS,
         messages: [
           {
             role: "system",
