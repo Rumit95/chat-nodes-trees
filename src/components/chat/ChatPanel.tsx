@@ -121,8 +121,8 @@ export function ChatPanel({ highlightId }: { highlightId: string | null }) {
         <SelectionPopup
           anchor={popup}
           onClose={() => setPopup(null)}
-          onSubmit={(question) => {
-            const newId = addAnnotation(popup.selectedText, question, popup.target);
+          onSubmit={async (question) => {
+            const newId = await addAnnotation(popup.selectedText, question, popup.target);
             setPanelOpen(true);
             if (newId) setFocusNode(newId);
           }}
