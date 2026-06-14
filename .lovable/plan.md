@@ -1,19 +1,45 @@
 ## Goal
-Temporarily lift the AI usage restrictions in `src/lib/ai.functions.ts` so you can record a demo video without hitting limits.
 
-## What's currently restricting usage
-1. **Global daily cap** — `DAILY_AI_LIMIT = 6`: only 6 AI prompts allowed per day across all visitors. Each `chatReply` / `annotationReply` call runs `consumeDailyQuota()`, which atomically increments the `ai_usage_daily` count and blocks once 6 is reached.
-2. **Output token cap** — `MAX_OUTPUT_TOKENS = 400`: AI replies are truncated to 400 tokens, so longer answers get cut off mid-sentence.
+Publish a single post about **Chat Nodes** to your LinkedIn ("Rumit's LinkedIn"), with your demo video attached. No app UI changes — this is a one-time action run through the LinkedIn connector gateway.
 
-## Plan
-1. **Disable the daily cap (main blocker).** Bypass the `consumeDailyQuota()` gate in both `chatReply` and `annotationReply` so requests are never rejected with the "daily AI usage limit" message. The simplest reversible way is to short-circuit `consumeDailyQuota()` to always return `true` (leaving the DB call and message logic in place, just commented/guarded), so it's a one-line flip to restore later.
-2. **Raise the output token limit.** Bump `MAX_OUTPUT_TOKENS` from `400` to a more generous value (e.g. `1500`) so demo answers read fully instead of getting truncated.
+## What I need from you
 
-No UI, schema, or backend (RLS/migration) changes — this is purely the two constants/guards in `src/lib/ai.functions.ts`.
+- **The demo footage**: upload the video file in chat (MP4 recommended, under 20MB per upload). I'll attach it to the post.
 
-## Restoring later
-Both changes are single-line tweaks. When the demo is done, set the daily-cap guard back and restore `MAX_OUTPUT_TOKENS = 400`.
+## Proposed post copy
 
-## Technical details
-- `consumeDailyQuota()` currently calls the `consume_ai_quota` RPC; I'll add an early `return true` (with a clear `// DEMO:` comment) so the quota is never consumed and nothing is blocked.
-- `MAX_OUTPUT_TOKENS` constant raised to 1500.
+> Excited to share something I've been building: **Chat Nodes** 🧠
+>
+> It's a conversational AI interface with a twist — instead of losing context in long threads, you can highlight any part of a reply and spin off a focused "side quest" Q&A that stays grounded in the original passage.
+>
+> ✨ Highlights:
+> • AI chat with full Markdown rendering
+> • Text annotations / nested side-quest threads
+> • An interactive knowledge graph that visualizes conversations as a node network
+> • Global search across every annotation
+>
+> Built with TanStack Start, React, and Lovable AI.
+>
+> Try it out 👉 https://chat-nodes-trees.lovable.app
+>
+> #AI #React #TanStackStart #BuildInPublic #Lovable
+
+(Tweak any wording before I post.)
+
+## Steps
+
+1. **Link the LinkedIn connection** ("Rumit's LinkedIn") to this project so its gateway credentials are available.
+2. **Verify scope** — confirm the connection has `w_member_social` (required to publish member posts + video). If missing, I'll prompt you to reconnect and grant it.
+3. **Get author URN** via `GET v2/userinfo` through the gateway.
+4. **Upload the video** through the LinkedIn video/assets upload flow via the gateway:
+   - Register the upload (`assets?action=registerUpload` / images-video API) to get an upload URL + asset URN.
+   - Upload your footage bytes to that URL.
+5. **Publish the post** via the UGC/posts API referencing the uploaded video asset, with the copy above.
+6. **Confirm** the post was created and share the result.
+
+## Technical notes
+
+- All calls go through the Lovable connector gateway (`https://connector-gateway.lovable.dev/linkedin/...`) with `Authorization: Bearer ${LOVABLE_API_KEY}` and `X-Connection-Api-Key: ${LINKEDIN_API_KEY}` headers — no direct LinkedIn API/SDK calls.
+- The video must finish LinkedIn-side processing before the post is created; I'll poll asset status if needed.
+- This is a throwaway script run during build; no permanent server functions, routes, or UI are added to the app.
+- LinkedIn limits: video should be MP4, ideally short for a demo. If your file exceeds the 20MB chat upload limit, let me know and we'll find an alternative path.
