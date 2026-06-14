@@ -61,7 +61,7 @@ async function callProvider(
 
 const messageSchema = z.object({
   role: z.enum(["user", "assistant"]),
-  content: z.string().min(1).max(2000),
+  content: z.string().min(1).max(20000),
 });
 
 const chatReplySchema = z.object({
