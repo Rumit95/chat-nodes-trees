@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { KeyRound } from "lucide-react";
+import { KeyRound, Loader2, AlertCircle } from "lucide-react";
+import { toast } from "sonner";
 import {
   Dialog,
   DialogContent,
@@ -12,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAiSettings, type AiProvider } from "@/lib/aiSettings";
+import { validateApiKey } from "@/lib/ai.functions";
 
 const PROVIDER_INFO: Record<
   AiProvider,
@@ -39,20 +41,40 @@ export function SettingsDialog({
   const { settings, saveSettings } = useAiSettings();
   const [provider, setProvider] = useState<AiProvider>(settings.provider);
   const [apiKey, setApiKey] = useState(settings.apiKey);
+  const [checking, setChecking] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   // Sync local form state whenever the dialog is (re)opened.
   useEffect(() => {
     if (open) {
       setProvider(settings.provider);
       setApiKey(settings.apiKey);
+      setError(null);
+      setChecking(false);
     }
   }, [open, settings]);
 
   const info = PROVIDER_INFO[provider];
 
-  const handleSave = () => {
-    saveSettings({ provider, apiKey });
-    onOpenChange(false);
+  const handleSave = async () => {
+    const key = apiKey.trim();
+    if (!key) return;
+    setChecking(true);
+    setError(null);
+    try {
+      const result = await validateApiKey({ data: { provider, apiKey: key } });
+      if (!result.valid) {
+        setError(result.error);
+        return;
+      }
+      saveSettings({ provider, apiKey: key });
+      toast.success("API key verified and saved");
+      onOpenChange(false);
+    } catch {
+      setError("Couldn't verify the key right now. Try again.");
+    } finally {
+      setChecking(false);
+    }
   };
 
   return (
