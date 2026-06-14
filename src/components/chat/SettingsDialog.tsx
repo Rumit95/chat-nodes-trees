@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { KeyRound } from "lucide-react";
+import { KeyRound, Loader2, AlertCircle } from "lucide-react";
+import { toast } from "sonner";
 import {
   Dialog,
   DialogContent,
@@ -12,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAiSettings, type AiProvider } from "@/lib/aiSettings";
+import { validateApiKey } from "@/lib/ai.functions";
 
 const PROVIDER_INFO: Record<
   AiProvider,
@@ -39,20 +41,40 @@ export function SettingsDialog({
   const { settings, saveSettings } = useAiSettings();
   const [provider, setProvider] = useState<AiProvider>(settings.provider);
   const [apiKey, setApiKey] = useState(settings.apiKey);
+  const [checking, setChecking] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   // Sync local form state whenever the dialog is (re)opened.
   useEffect(() => {
     if (open) {
       setProvider(settings.provider);
       setApiKey(settings.apiKey);
+      setError(null);
+      setChecking(false);
     }
   }, [open, settings]);
 
   const info = PROVIDER_INFO[provider];
 
-  const handleSave = () => {
-    saveSettings({ provider, apiKey });
-    onOpenChange(false);
+  const handleSave = async () => {
+    const key = apiKey.trim();
+    if (!key) return;
+    setChecking(true);
+    setError(null);
+    try {
+      const result = await validateApiKey({ data: { provider, apiKey: key } });
+      if (!result.valid) {
+        setError(result.error);
+        return;
+      }
+      saveSettings({ provider, apiKey: key });
+      toast.success("API key verified and saved");
+      onOpenChange(false);
+    } catch {
+      setError("Couldn't verify the key right now. Try again.");
+    } finally {
+      setChecking(false);
+    }
   };
 
   return (
@@ -76,7 +98,10 @@ export function SettingsDialog({
                 <button
                   key={p}
                   type="button"
-                  onClick={() => setProvider(p)}
+                  onClick={() => {
+                    setProvider(p);
+                    setError(null);
+                  }}
                   className={`rounded-lg border px-3 py-2 text-sm font-medium transition-colors ${
                     provider === p
                       ? "border-primary bg-accent text-accent-foreground"
@@ -97,23 +122,33 @@ export function SettingsDialog({
               value={apiKey}
               autoComplete="off"
               placeholder={info.placeholder}
-              onChange={(e) => setApiKey(e.target.value)}
+              onChange={(e) => {
+                setApiKey(e.target.value);
+                if (error) setError(null);
+              }}
               onKeyDown={(e) => {
-                if (e.key === "Enter" && apiKey.trim()) handleSave();
+                if (e.key === "Enter" && apiKey.trim() && !checking) handleSave();
               }}
             />
             <p className="text-xs text-muted-foreground">
               Uses the <span className="font-medium text-foreground">{info.model}</span> model.
             </p>
+            {error && (
+              <p className="flex items-start gap-1.5 text-xs text-destructive">
+                <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                {error}
+              </p>
+            )}
           </div>
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
+          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={checking}>
             Cancel
           </Button>
-          <Button onClick={handleSave} disabled={!apiKey.trim()}>
-            Save
+          <Button onClick={handleSave} disabled={!apiKey.trim() || checking}>
+            {checking && <Loader2 className="h-4 w-4 animate-spin" />}
+            {checking ? "Verifying…" : "Save"}
           </Button>
         </DialogFooter>
       </DialogContent>

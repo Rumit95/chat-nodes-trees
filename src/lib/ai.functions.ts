@@ -8,10 +8,12 @@ const MAX_OUTPUT_TOKENS = 4096;
 const PROVIDERS = {
   openai: {
     url: "https://api.openai.com/v1/chat/completions",
+    modelsUrl: "https://api.openai.com/v1/models",
     model: "gpt-4o-mini",
   },
   gemini: {
     url: "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions",
+    modelsUrl: "https://generativelanguage.googleapis.com/v1beta/openai/models",
     model: "gemini-2.0-flash",
   },
 } as const;
@@ -22,6 +24,31 @@ const aiConfigSchema = z.object({
 });
 
 type AiConfig = z.infer<typeof aiConfigSchema>;
+
+// Lightweight check that a key is valid for the selected provider. Hits the
+// provider's models endpoint (a cheap GET) so errors surface in Settings
+// instead of mid-chat.
+export const validateApiKey = createServerFn({ method: "POST" })
+  .inputValidator((data: unknown) => aiConfigSchema.parse(data))
+  .handler(async ({ data }) => {
+    const provider = PROVIDERS[data.provider];
+    let response: Response;
+    try {
+      response = await fetch(provider.modelsUrl, {
+        headers: { Authorization: `Bearer ${data.apiKey}` },
+      });
+    } catch {
+      return { valid: false as const, error: "Couldn't reach the provider. Try again." };
+    }
+    if (response.ok) return { valid: true as const };
+    if (response.status === 401 || response.status === 403) {
+      return {
+        valid: false as const,
+        error: "This key was rejected. Make sure it matches the selected provider.",
+      };
+    }
+    return { valid: false as const, error: `Validation failed (${response.status}).` };
+  });
 
 // Calls the user-selected provider with their key and returns the reply text.
 async function callProvider(
