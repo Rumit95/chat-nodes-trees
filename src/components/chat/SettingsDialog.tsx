@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { KeyRound, ExternalLink } from "lucide-react";
+import { KeyRound } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -15,18 +15,16 @@ import { useAiSettings, type AiProvider } from "@/lib/aiSettings";
 
 const PROVIDER_INFO: Record<
   AiProvider,
-  { label: string; placeholder: string; keyUrl: string; model: string }
+  { label: string; placeholder: string; model: string }
 > = {
   openai: {
     label: "OpenAI",
     placeholder: "sk-...",
-    keyUrl: "https://platform.openai.com/api-keys",
     model: "gpt-4o-mini",
   },
   gemini: {
     label: "Google Gemini",
     placeholder: "AIza...",
-    keyUrl: "https://aistudio.google.com/app/apikey",
     model: "gemini-2.0-flash",
   },
 };
@@ -105,15 +103,7 @@ export function SettingsDialog({
               }}
             />
             <p className="text-xs text-muted-foreground">
-              Uses the <span className="font-medium text-foreground">{info.model}</span> model.{" "}
-              <a
-                href={info.keyUrl}
-                target="_blank"
-                rel="noreferrer"
-                className="inline-flex items-center gap-0.5 text-primary hover:underline"
-              >
-                Get a key <ExternalLink className="h-3 w-3" />
-              </a>
+              Uses the <span className="font-medium text-foreground">{info.model}</span> model.
             </p>
           </div>
         </div>
