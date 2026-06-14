@@ -119,23 +119,33 @@ export function SettingsDialog({
               value={apiKey}
               autoComplete="off"
               placeholder={info.placeholder}
-              onChange={(e) => setApiKey(e.target.value)}
+              onChange={(e) => {
+                setApiKey(e.target.value);
+                if (error) setError(null);
+              }}
               onKeyDown={(e) => {
-                if (e.key === "Enter" && apiKey.trim()) handleSave();
+                if (e.key === "Enter" && apiKey.trim() && !checking) handleSave();
               }}
             />
             <p className="text-xs text-muted-foreground">
               Uses the <span className="font-medium text-foreground">{info.model}</span> model.
             </p>
+            {error && (
+              <p className="flex items-start gap-1.5 text-xs text-destructive">
+                <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                {error}
+              </p>
+            )}
           </div>
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
+          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={checking}>
             Cancel
           </Button>
-          <Button onClick={handleSave} disabled={!apiKey.trim()}>
-            Save
+          <Button onClick={handleSave} disabled={!apiKey.trim() || checking}>
+            {checking && <Loader2 className="h-4 w-4 animate-spin" />}
+            {checking ? "Verifying…" : "Save"}
           </Button>
         </DialogFooter>
       </DialogContent>
