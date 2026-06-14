@@ -179,6 +179,15 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         title: c.messages.length === 0 ? titleFrom(content) : c.title,
         messages: [...c.messages, userMsg, aiMsg],
       }));
+      if (!hasKey) {
+        updateConv(id, (c) => ({
+          ...c,
+          messages: c.messages.map((m) =>
+            m.id === aiMsgId ? { ...m, content: NO_KEY_MESSAGE } : m,
+          ),
+        }));
+        return;
+      }
       setIsLoading(true);
       try {
         const history = [
@@ -188,7 +197,9 @@ export function ChatProvider({ children }: { children: ReactNode }) {
           })),
           { role: "user" as const, content },
         ];
-        const { content: reply } = await chatReply({ data: { messages: history } });
+        const { content: reply } = await chatReply({
+          data: { config: settings, messages: history },
+        });
         updateConv(id, (c) => ({
           ...c,
           messages: c.messages.map((m) => (m.id === aiMsgId ? { ...m, content: reply } : m)),
