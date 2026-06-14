@@ -10,12 +10,14 @@ const MAX_OUTPUT_TOKENS = 1500;
 // Global daily cap: total AI prompts allowed per day across ALL visitors.
 const DAILY_AI_LIMIT = 6;
 
+// DEMO: set to false to re-enable the daily cap after recording the demo.
+const DISABLE_DAILY_CAP = true;
+
 // Atomically counts this prompt against the global daily quota.
 // Returns true if the request is allowed, false if the daily cap is reached.
 async function consumeDailyQuota(): Promise<boolean> {
   // DEMO: daily cap temporarily disabled for demo recording.
-  // To restore the cap, remove the line below.
-  return true;
+  if (DISABLE_DAILY_CAP) return true;
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { data, error } = await supabaseAdmin.rpc("consume_ai_quota", {
     _max: DAILY_AI_LIMIT,
