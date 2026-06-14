@@ -72,6 +72,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<ChatState>(emptyState);
   const [hydrated, setHydrated] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const { settings, hasKey } = useAiSettings();
 
   // Load from localStorage on mount (client only).
   useEffect(() => {
