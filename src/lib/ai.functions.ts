@@ -1,35 +1,63 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 
-const LOVABLE_API_KEY = process.env.LOVABLE_API_KEY;
-const GATEWAY_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
-
-// DEMO: raised so responses aren't truncated while recording.
 const MAX_OUTPUT_TOKENS = 4096;
 
-// Global daily cap: total AI prompts allowed per day across ALL visitors.
-const DAILY_AI_LIMIT = 6;
+// Bring-your-own-key: each request carries the user's chosen provider + key.
+// Nothing is stored server-side; the key is used only for this single call.
+const PROVIDERS = {
+  openai: {
+    url: "https://api.openai.com/v1/chat/completions",
+    model: "gpt-4o-mini",
+  },
+  gemini: {
+    url: "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions",
+    model: "gemini-2.0-flash",
+  },
+} as const;
 
-// DEMO: set to false to re-enable the daily cap after recording the demo.
-const DISABLE_DAILY_CAP = true;
+const aiConfigSchema = z.object({
+  provider: z.enum(["openai", "gemini"]),
+  apiKey: z.string().min(1).max(400),
+});
 
-// Atomically counts this prompt against the global daily quota.
-// Returns true if the request is allowed, false if the daily cap is reached.
-async function consumeDailyQuota(): Promise<boolean> {
-  // DEMO: daily cap temporarily disabled for demo recording.
-  if (DISABLE_DAILY_CAP) return true;
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const { data, error } = await supabaseAdmin.rpc("consume_ai_quota", {
-    _max: DAILY_AI_LIMIT,
+type AiConfig = z.infer<typeof aiConfigSchema>;
+
+// Calls the user-selected provider with their key and returns the reply text.
+async function callProvider(
+  config: AiConfig,
+  messages: { role: string; content: string }[],
+): Promise<string> {
+  const provider = PROVIDERS[config.provider];
+  const response = await fetch(provider.url, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${config.apiKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      model: provider.model,
+      max_tokens: MAX_OUTPUT_TOKENS,
+      messages,
+    }),
   });
-  if (error) {
-    throw new Error(`Failed to check daily AI limit: ${error.message}`);
+  if (!response.ok) {
+    if (response.status === 401 || response.status === 403) {
+      throw new Error("Your API key was rejected. Check it in Settings.");
+    }
+    if (response.status === 429) {
+      throw new Error("Your provider rate limit or quota was reached. Try again later.");
+    }
+    const text = await response.text();
+    throw new Error(`AI request failed (${response.status}): ${text.slice(0, 200)}`);
   }
-  return data === true;
+  const json = await response.json();
+  const content = json.choices?.[0]?.message?.content;
+  if (typeof content !== "string") {
+    throw new Error("Unexpected AI response shape");
+  }
+  return content;
 }
-
-const DAILY_LIMIT_MESSAGE =
-  "This demo has reached its daily AI usage limit. Please try again tomorrow.";
 
 const messageSchema = z.object({
   role: z.enum(["user", "assistant"]),
@@ -37,10 +65,12 @@ const messageSchema = z.object({
 });
 
 const chatReplySchema = z.object({
+  config: aiConfigSchema,
   messages: z.array(messageSchema).min(1).max(20),
 });
 
 const annotationReplySchema = z.object({
+  config: aiConfigSchema,
   question: z.string().min(1).max(1000),
   selectedText: z.string().min(1).max(2000),
   sourceText: z.string().max(4000).optional(),
@@ -59,48 +89,20 @@ const annotationReplySchema = z.object({
 export const chatReply = createServerFn({ method: "POST" })
   .inputValidator((data: unknown) => chatReplySchema.parse(data))
   .handler(async ({ data }) => {
-    if (!LOVABLE_API_KEY) {
-      throw new Error("LOVABLE_API_KEY is not configured");
-    }
-    if (!(await consumeDailyQuota())) {
-      throw new Error(DAILY_LIMIT_MESSAGE);
-    }
-    const response = await fetch(GATEWAY_URL, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
-        "Content-Type": "application/json",
+    const content = await callProvider(data.config, [
+      {
+        role: "system",
+        content:
+          "You are a helpful, concise AI assistant. Keep answers clear and to the point.",
       },
-      body: JSON.stringify({
-        model: "google/gemini-2.5-flash-lite",
-        max_tokens: MAX_OUTPUT_TOKENS,
-        messages: [
-          { role: "system", content: "You are a helpful, concise AI assistant. Keep answers clear and to the point." },
-          ...data.messages,
-        ],
-      }),
-    });
-    if (!response.ok) {
-      const text = await response.text();
-      throw new Error(`AI gateway error ${response.status}: ${text}`);
-    }
-    const json = await response.json();
-    const content = json.choices?.[0]?.message?.content;
-    if (typeof content !== "string") {
-      throw new Error("Unexpected AI response shape");
-    }
+      ...data.messages,
+    ]);
     return { content };
   });
 
 export const annotationReply = createServerFn({ method: "POST" })
   .inputValidator((data: unknown) => annotationReplySchema.parse(data))
   .handler(async ({ data }) => {
-    if (!LOVABLE_API_KEY) {
-      throw new Error("LOVABLE_API_KEY is not configured");
-    }
-    if (!(await consumeDailyQuota())) {
-      throw new Error(DAILY_LIMIT_MESSAGE);
-    }
     const parts: string[] = [];
     if (data.conversation && data.conversation.length) {
       const convo = data.conversation
@@ -119,36 +121,16 @@ export const annotationReply = createServerFn({ method: "POST" })
       parts.push(`Earlier follow-up questions in this thread:\n"""${prior}"""`);
     }
     parts.push(`Question: ${data.question}`);
-    const response = await fetch(GATEWAY_URL, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
-        "Content-Type": "application/json",
+    const content = await callProvider(data.config, [
+      {
+        role: "system",
+        content:
+          "You are a helpful assistant answering a follow-up question about a highlighted phrase taken from an AI chat. Always interpret the highlighted phrase in the context of the surrounding passage and conversation provided — do not answer it in isolation or guess an unrelated meaning. Be concise and directly address the question.",
       },
-      body: JSON.stringify({
-        model: "google/gemini-2.5-flash-lite",
-        max_tokens: MAX_OUTPUT_TOKENS,
-        messages: [
-          {
-            role: "system",
-            content:
-              "You are a helpful assistant answering a follow-up question about a highlighted phrase taken from an AI chat. Always interpret the highlighted phrase in the context of the surrounding passage and conversation provided — do not answer it in isolation or guess an unrelated meaning. Be concise and directly address the question.",
-          },
-          {
-            role: "user",
-            content: parts.join("\n\n"),
-          },
-        ],
-      }),
-    });
-    if (!response.ok) {
-      const text = await response.text();
-      throw new Error(`AI gateway error ${response.status}: ${text}`);
-    }
-    const json = await response.json();
-    const content = json.choices?.[0]?.message?.content;
-    if (typeof content !== "string") {
-      throw new Error("Unexpected AI response shape");
-    }
+      {
+        role: "user",
+        content: parts.join("\n\n"),
+      },
+    ]);
     return { content };
   });
