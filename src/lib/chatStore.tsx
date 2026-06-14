@@ -216,7 +216,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         setIsLoading(false);
       }
     },
-    [state.activeId, state.conversations, createConversation, updateConv],
+    [state.activeId, state.conversations, createConversation, updateConv, settings, hasKey],
   );
 
   const addAnnotation = useCallback(
