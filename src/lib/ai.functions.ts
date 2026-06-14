@@ -4,8 +4,8 @@ import { z } from "zod";
 const LOVABLE_API_KEY = process.env.LOVABLE_API_KEY;
 const GATEWAY_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
 
-// Demo/trial caps — keep AI usage low and predictable.
-const MAX_OUTPUT_TOKENS = 1500;
+// DEMO: raised so responses aren't truncated while recording.
+const MAX_OUTPUT_TOKENS = 4096;
 
 // Global daily cap: total AI prompts allowed per day across ALL visitors.
 const DAILY_AI_LIMIT = 6;
