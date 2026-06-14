@@ -1,11 +1,13 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
-import { MessageSquare, Network, PanelLeftOpen } from "lucide-react";
+import { MessageSquare, Network, PanelLeftOpen, Settings } from "lucide-react";
 import { ChatProvider, useChat } from "@/lib/chatStore";
+import { AiSettingsProvider, useAiSettings } from "@/lib/aiSettings";
 import { Sidebar } from "@/components/chat/Sidebar";
 import { ChatPanel } from "@/components/chat/ChatPanel";
 import { GraphView } from "@/components/chat/GraphView";
 import { SearchDialog } from "@/components/chat/SearchDialog";
+import { SettingsDialog } from "@/components/chat/SettingsDialog";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -25,9 +27,11 @@ export const Route = createFileRoute("/")({
     ],
   }),
   component: () => (
-    <ChatProvider>
-      <Workspace />
-    </ChatProvider>
+    <AiSettingsProvider>
+      <ChatProvider>
+        <Workspace />
+      </ChatProvider>
+    </AiSettingsProvider>
   ),
 });
 
@@ -35,9 +39,11 @@ type Tab = "chat" | "graph";
 
 function Workspace() {
   const { active, hydrated, selectConversation } = useChat();
+  const { hasKey } = useAiSettings();
   const [tab, setTab] = useState<Tab>("chat");
   const [collapsed, setCollapsed] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const [highlightId, setHighlightId] = useState<string | null>(null);
 
   if (!hydrated) {
@@ -96,6 +102,18 @@ function Workspace() {
               <Network className="h-4 w-4" /> Graph
             </button>
           </div>
+          <button
+            onClick={() => setSettingsOpen(true)}
+            className={`relative flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-sm font-medium transition-colors ${
+              hasKey
+                ? "bg-card text-muted-foreground hover:text-foreground"
+                : "border-primary bg-primary text-primary-foreground hover:opacity-90"
+            }`}
+            aria-label="AI settings"
+          >
+            <Settings className="h-4 w-4" />
+            <span className="hidden sm:inline">{hasKey ? "Settings" : "Add API key"}</span>
+          </button>
         </header>
 
         {tab === "chat" ? (
@@ -112,6 +130,8 @@ function Workspace() {
       {searchOpen && (
         <SearchDialog onClose={() => setSearchOpen(false)} onNavigate={navigateToNode} />
       )}
+
+      <SettingsDialog open={settingsOpen} onOpenChange={setSettingsOpen} />
     </div>
   );
 }
