@@ -15,16 +15,17 @@ import {
   type Message,
 } from "./chatTypes";
 import { chatReply, annotationReply } from "./ai.functions";
+import { useAiSettings } from "./aiSettings";
 
 // Returns a user-facing message for a failed AI call. Surfaces the daily-limit
 // notice from the server when present, otherwise the provided fallback.
 function aiErrorMessage(error: unknown, fallback: string): string {
   const msg = error instanceof Error ? error.message : String(error ?? "");
-  if (msg.toLowerCase().includes("daily ai usage limit")) {
-    return "This demo has reached its daily AI usage limit. Please try again tomorrow.";
-  }
-  return fallback;
+  return msg || fallback;
 }
+
+const NO_KEY_MESSAGE =
+  "Add your own API key in Settings (top right) to start chatting.";
 
 function emptyState(): ChatState {
   return { conversations: {}, order: [], activeId: null };
