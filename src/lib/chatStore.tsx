@@ -263,6 +263,13 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         }
         return { ...c, messages, nodes, qas };
       });
+      if (!hasKey) {
+        updateConv(convId, (c) => ({
+          ...c,
+          qas: { ...c.qas, [qaId]: { ...c.qas[qaId], answer: NO_KEY_MESSAGE } },
+        }));
+        return nodeId;
+      }
       try {
         const conv = state.conversations[convId];
         let sourceText: string | undefined;
