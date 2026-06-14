@@ -283,6 +283,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
           .map((m) => ({ role: m.role as "user" | "assistant", content: m.content }));
         const { content: answer } = await annotationReply({
           data: {
+            config: settings,
             question: question.trim(),
             selectedText,
             sourceText,
