@@ -306,7 +306,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       }
       return nodeId;
     },
-    [state.activeId, state.conversations, updateConv],
+    [state.activeId, state.conversations, updateConv, settings, hasKey],
   );
 
   const addQuestionToNode = useCallback(
@@ -332,6 +332,13 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         };
         return { ...c, nodes, qas };
       });
+      if (!hasKey) {
+        updateConv(convId, (c) => ({
+          ...c,
+          qas: { ...c.qas, [qaId]: { ...c.qas[qaId], answer: NO_KEY_MESSAGE } },
+        }));
+        return;
+      }
       try {
         const conv = state.conversations[convId];
         let sourceText: string | undefined;
@@ -349,6 +356,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
           .map((m) => ({ role: m.role as "user" | "assistant", content: m.content }));
         const { content: answer } = await annotationReply({
           data: {
+            config: settings,
             question: question.trim(),
             selectedText: node.selectedText,
             sourceText,
@@ -371,7 +379,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         }));
       }
     },
-    [state.activeId, state.conversations, updateConv],
+    [state.activeId, state.conversations, updateConv, settings, hasKey],
   );
 
   const value: ChatContextValue = {
