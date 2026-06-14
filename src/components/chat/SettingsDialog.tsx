@@ -98,7 +98,10 @@ export function SettingsDialog({
                 <button
                   key={p}
                   type="button"
-                  onClick={() => setProvider(p)}
+                  onClick={() => {
+                    setProvider(p);
+                    setError(null);
+                  }}
                   className={`rounded-lg border px-3 py-2 text-sm font-medium transition-colors ${
                     provider === p
                       ? "border-primary bg-accent text-accent-foreground"
